@@ -2,6 +2,8 @@
 #include <string>
 #include <vector>
 
+inline void putimage_alpha(int x, int y, IMAGE* img);
+
 class Animation
 {
 public:
