@@ -69,6 +69,11 @@ const int PLAYER_HEIGHT = 80;
 // 阴影宽度
 const int SHADOW_WIDTH = 32;
 
+// 窗口宽度
+const int WINDOW_WIDTH = 1280;
+// 窗口高度
+const int WINDOW_HEIGHT = 720;
+
 IMAGE img_player_left[PLAYER_ANIM_FRAME_COUNT];
 IMAGE img_player_right[PLAYER_ANIM_FRAME_COUNT];
 
@@ -207,6 +212,24 @@ int main()
             double normalize_y = dir_y / input_magnitude;
 			player_pos.x += static_cast<int>(normalize_x * PLAYER_SPEED);
             player_pos.y += static_cast<int>(normalize_y * PLAYER_SPEED);
+		}
+
+		// 限制玩家移动范围
+        if (player_pos.x < 0)
+		{
+			player_pos.x = 0;
+		}
+		if (player_pos.x > WINDOW_WIDTH - PLAYER_WIDTH)
+		{
+			player_pos.x = WINDOW_WIDTH - PLAYER_WIDTH;
+		}
+		if (player_pos.y < 0)
+		{
+			player_pos.y = 0;
+		}
+		if (player_pos.y > WINDOW_HEIGHT - PLAYER_HEIGHT)
+		{
+			player_pos.y = WINDOW_HEIGHT - PLAYER_HEIGHT;
 		}
 
 		// 使用static确保counter只在第一个游戏帧时被初始化为0
