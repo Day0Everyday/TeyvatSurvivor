@@ -66,8 +66,13 @@ const int PLAYER_WIDTH = 80;
 // 玩家高度
 const int PLAYER_HEIGHT = 80;
 
+// 阴影宽度
+const int SHADOW_WIDTH = 32;
+
 IMAGE img_player_left[PLAYER_ANIM_FRAME_COUNT];
 IMAGE img_player_right[PLAYER_ANIM_FRAME_COUNT];
+
+IMAGE img_shadow;
 
 // 玩家位置坐标
 POINT player_pos = { 500, 500 };
@@ -101,6 +106,11 @@ void LoadAnimation()
 
 void DrawPlayer(int delta, int direction_x)
 {
+	// 为玩家绘制阴影
+	int pos_shadow_x = player_pos.x + (PLAYER_WIDTH - SHADOW_WIDTH) / 2;
+	int pos_shadow_y = player_pos.y + PLAYER_HEIGHT - 8;
+	putimage_alpha(pos_shadow_x, pos_shadow_y, &img_shadow);
+
 	static bool facing_left = false;
 	if (direction_x < 0)
 	{
@@ -137,6 +147,7 @@ int main()
 
 	LoadAnimation();
 	loadimage(&img_bg, _T("img/background.png"));
+	loadimage(&img_shadow, _T("img/shadow_player.png"));
 
 	BeginBatchDraw();
 
