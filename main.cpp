@@ -56,9 +56,6 @@ private:
 	std::vector<IMAGE*> frames;
 };
 
-// 当前动画的帧索引
-int idx_current_anim = 0;
-
 const int PLAYER_ANIM_FRAME_COUNT = 6;
 
 // 玩家宽度
@@ -73,9 +70,6 @@ const int SHADOW_WIDTH = 32;
 const int WINDOW_WIDTH = 1280;
 // 窗口高度
 const int WINDOW_HEIGHT = 720;
-
-IMAGE img_player_left[PLAYER_ANIM_FRAME_COUNT];
-IMAGE img_player_right[PLAYER_ANIM_FRAME_COUNT];
 
 IMAGE img_shadow;
 
@@ -95,18 +89,6 @@ inline void putimage_alpha(int x, int y, IMAGE* img)
     int w = img->getwidth();
     int h = img->getheight();
 	AlphaBlend(GetImageHDC(NULL), x, y, w, h, GetImageHDC(img), 0, 0, w, h, {AC_SRC_OVER, 0, 255, AC_SRC_ALPHA});
-}
-
-void LoadAnimation()
-{
-    for (size_t i = 0; i < PLAYER_ANIM_FRAME_COUNT; i++)
-    {
-        std::wstring path = L"img/player_left_" + std::to_wstring(i) + L".png";
-        loadimage(&img_player_left[i], path.c_str());
-
-		path = L"img/player_right_" + std::to_wstring(i) + L".png";
-        loadimage(&img_player_right[i], path.c_str());
-    }
 }
 
 void DrawPlayer(int delta, int direction_x)
@@ -150,7 +132,6 @@ int main()
     bool is_move_left = false;
     bool is_move_right = false;
 
-	LoadAnimation();
 	loadimage(&img_bg, _T("img/background.png"));
 	loadimage(&img_shadow, _T("img/shadow_player.png"));
 
@@ -231,18 +212,6 @@ int main()
 		{
 			player_pos.y = WINDOW_HEIGHT - PLAYER_HEIGHT;
 		}
-
-		// 使用static确保counter只在第一个游戏帧时被初始化为0
-		static int counter = 0;
-
-		// 每5个游戏帧切换一个动画帧
-		if (++counter % 5 == 0)
-		{
-			idx_current_anim++;
-		}
-
-		// 使动画循环播放
-		idx_current_anim %= PLAYER_ANIM_FRAME_COUNT;
 
 		cleardevice();
 
