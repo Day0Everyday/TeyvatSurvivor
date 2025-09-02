@@ -198,22 +198,16 @@ int main()
 
 		}
 
-        if (is_move_left)
-        {
-            player_pos.x -= PLAYER_SPEED;
-        }
-        if (is_move_right)
-        {
-            player_pos.x += PLAYER_SPEED;
-        }
-        if (is_move_up)
-        {
-            player_pos.y -= PLAYER_SPEED;
-        }
-        if (is_move_down)
-        {
-            player_pos.y += PLAYER_SPEED;
-        }
+		int dir_x = is_move_right - is_move_left;
+        int dir_y = is_move_down - is_move_up;
+		double input_magnitude = sqrt(dir_x * dir_x + dir_y * dir_y);
+		if (input_magnitude != 0)
+		{ 
+			double normalize_x = dir_x / input_magnitude;
+            double normalize_y = dir_y / input_magnitude;
+			player_pos.x += static_cast<int>(normalize_x * PLAYER_SPEED);
+            player_pos.y += static_cast<int>(normalize_y * PLAYER_SPEED);
+		}
 
 		// 使用static确保counter只在第一个游戏帧时被初始化为0
 		static int counter = 0;
