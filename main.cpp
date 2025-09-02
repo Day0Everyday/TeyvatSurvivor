@@ -9,8 +9,8 @@ class Animation
 public:
 
 	// path为图片路径, num为当前动画所使用的图片数量, interval为帧间隔
-    Animation(LPCTSTR path, int num, int interval)
-    {
+	Animation(LPCTSTR path, int num, int interval)
+	{
 		interval_ms = interval;
 
 		TCHAR path_file[256];
@@ -21,36 +21,39 @@ public:
 			loadimage(frame, path_file);
 			frames.push_back(frame);
 		}
-    }
-    ~Animation()
-    {
+	}
+	~Animation()
+	{
 		for (size_t i = 0; i < frames.size(); i++)
-        {
-            delete frames[i];
-        }
-    }
+		{
+			delete frames[i];
+		}
+	}
 
-	// x, y代表动画渲染位置, delta代表距离上一次调用Play函数的时间间隔
+	// x, y代表动画渲染位置, delta代表距离上一次调用Play函数的间隔
 	void Play(int x, int y, int delta)
 	{
-		timer += delta;
+		counter += delta;
 
-		if (timer >= interval_ms)
-        {
+		if (counter >= interval_ms)
+		{
 			idx_frame = (idx_frame + 1) % frames.size();
-			timer = 0;
-        }
+			counter = 0;
+		}
 		putimage_alpha(x, y, frames[idx_frame]);
 	}
 private:
 
 	// 动画计时器
-	int timer = 0;
+	//int timer = 0;
+
+	// 动画播放计数器
+	int counter = 0;
 
 	// 动画帧索引
 	int idx_frame = 0;
 	int interval_ms = 0;
-    std::vector<IMAGE*> frames;
+	std::vector<IMAGE*> frames;
 };
 
 // 当前动画的帧索引
