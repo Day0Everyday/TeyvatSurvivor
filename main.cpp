@@ -4,6 +4,11 @@
 
 inline void putimage_alpha(int x, int y, IMAGE* img);
 
+// 窗口宽度
+const int WINDOW_WIDTH = 1280;
+// 窗口高度
+const int WINDOW_HEIGHT = 720;
+
 class Animation
 {
 public:
@@ -56,147 +61,78 @@ private:
 	std::vector<IMAGE*> frames;
 };
 
-const int PLAYER_ANIM_FRAME_COUNT = 6;
-
-// 玩家宽度
-const int PLAYER_WIDTH = 80;
-// 玩家高度
-const int PLAYER_HEIGHT = 80;
-
-// 阴影宽度
-const int SHADOW_WIDTH = 32;
-
-// 窗口宽度
-const int WINDOW_WIDTH = 1280;
-// 窗口高度
-const int WINDOW_HEIGHT = 720;
-
-IMAGE img_shadow;
-
-// 玩家位置坐标
-POINT player_pos = { 500, 500 };
-
-const int PLAYER_SPEED = 5;
-
-Animation anim_left_player(L"img/player_left_%d.png", PLAYER_ANIM_FRAME_COUNT, 45);
-Animation anim_right_player(L"img/player_right_%d.png", PLAYER_ANIM_FRAME_COUNT, 45);
-
-#pragma comment(lib, "MSIMG32.LIB")
-
-// putimage在渲染过程中没有使用IMAGE对象的透明度信息, 绘制带有透明度的图片时, 需要使用以下函数
-inline void putimage_alpha(int x, int y, IMAGE* img)
+class Player
 {
-    int w = img->getwidth();
-    int h = img->getheight();
-	AlphaBlend(GetImageHDC(NULL), x, y, w, h, GetImageHDC(img), 0, 0, w, h, {AC_SRC_OVER, 0, 255, AC_SRC_ALPHA});
-}
+public:
 
-void DrawPlayer(int delta, int direction_x)
-{
-	// 为玩家绘制阴影
-	int pos_shadow_x = player_pos.x + (PLAYER_WIDTH - SHADOW_WIDTH) / 2;
-	int pos_shadow_y = player_pos.y + PLAYER_HEIGHT - 8;
-	putimage_alpha(pos_shadow_x, pos_shadow_y, &img_shadow);
-
-	static bool facing_left = false;
-	if (direction_x < 0)
+	Player()
 	{
-		facing_left = true;
-	}
-	else if (direction_x > 0)
-	{
-		facing_left = false;
+		loadimage(&img_shadow, _T("img/shadow_player.png"));
+		anim_left = new Animation(L"img/player_left_%d.png", PLAYER_ANIM_FRAME_COUNT, 45);
+		anim_right = new Animation(L"img/player_right_%d.png", PLAYER_ANIM_FRAME_COUNT, 45);
 	}
 
-	if (facing_left)
+	~Player()
 	{
-		anim_left_player.Play(player_pos.x, player_pos.y, delta);
+		delete anim_left;
+		delete anim_right;
 	}
-	else
+
+	void ProcessEvent(const ExMessage& msg)
 	{
-		anim_right_player.Play(player_pos.x, player_pos.y, delta);
-	}
-}
-
-int main()
-{
-	initgraph(1280, 720);
-
-	bool running = true;
-
-	ExMessage msg;
-	IMAGE img_bg;
-
-	bool is_move_up = false;
-    bool is_move_down = false;
-    bool is_move_left = false;
-    bool is_move_right = false;
-
-	loadimage(&img_bg, _T("img/background.png"));
-	loadimage(&img_shadow, _T("img/shadow_player.png"));
-
-	BeginBatchDraw();
-
-    while (running)
-    {
-		DWORD start_time = GetTickCount();
-
-		while (peekmessage(&msg))
+		if (msg.message == WM_KEYDOWN)
 		{
-			if (msg.message == WM_KEYDOWN)
+			switch (msg.vkcode)
 			{
-				switch (msg.vkcode)
-				{
-				case VK_ESCAPE:
-					running = false;
-					break;
-				case VK_LEFT:
-					is_move_left = true;
-					break;
-				case VK_RIGHT:
-					is_move_right = true;
-					break;
-				case VK_UP:
-					is_move_up = true;
-					break;
-				case VK_DOWN:
-					is_move_down = true;
-					break;
-				}
-			} else if (msg.message == WM_KEYUP)
-			{
-                switch (msg.vkcode)
-				{
-				case VK_LEFT:
-					is_move_left = false;
-					break;
-				case VK_RIGHT:
-					is_move_right = false;
-					break;
-				case VK_UP:
-					is_move_up = false;
-					break;
-				case VK_DOWN:
-					is_move_down = false;
-					break;
-				}
+			case VK_LEFT:
+				is_move_left = true;
+				break;
+			case VK_RIGHT:
+				is_move_right = true;
+				break;
+			case VK_UP:
+				is_move_up = true;
+				break;
+			case VK_DOWN:
+				is_move_down = true;
+				break;
 			}
-
 		}
+		else if (msg.message == WM_KEYUP)
+		{
+			switch (msg.vkcode)
+			{
+			case VK_LEFT:
+				is_move_left = false;
+				break;
+			case VK_RIGHT:
+				is_move_right = false;
+				break;
+			case VK_UP:
+				is_move_up = false;
+				break;
+			case VK_DOWN:
+				is_move_down = false;
+				break;
+			}
+		}
+	}
 
+	void Move()
+	{
 		int dir_x = is_move_right - is_move_left;
-        int dir_y = is_move_down - is_move_up;
+		int dir_y = is_move_down - is_move_up;
 		double input_magnitude = sqrt(dir_x * dir_x + dir_y * dir_y);
 		if (input_magnitude != 0)
-		{ 
+		{
 			double normalize_x = dir_x / input_magnitude;
-            double normalize_y = dir_y / input_magnitude;
+			double normalize_y = dir_y / input_magnitude;
 			player_pos.x += static_cast<int>(normalize_x * PLAYER_SPEED);
-            player_pos.y += static_cast<int>(normalize_y * PLAYER_SPEED);
+			player_pos.y += static_cast<int>(normalize_y * PLAYER_SPEED);
 		}
 
 		// 限制玩家移动范围
-        if (player_pos.x < 0)
+		if (player_pos.x < 0)
 		{
 			player_pos.x = 0;
 		}
@@ -212,11 +148,96 @@ int main()
 		{
 			player_pos.y = WINDOW_HEIGHT - PLAYER_HEIGHT;
 		}
+	}
+
+	void Draw(int delta)
+	{
+		// 为玩家绘制阴影
+		int pos_shadow_x = player_pos.x + (PLAYER_WIDTH - SHADOW_WIDTH) / 2;
+		int pos_shadow_y = player_pos.y + PLAYER_HEIGHT - 8;
+		putimage_alpha(pos_shadow_x, pos_shadow_y, &img_shadow);
+
+		static bool facing_left = false;
+		int direction_x = is_move_right - is_move_left;
+		if (direction_x < 0)
+		{
+			facing_left = true;
+		}
+		else if (direction_x > 0)
+		{
+			facing_left = false;
+		}
+
+		if (facing_left)
+		{
+			anim_left->Play(player_pos.x, player_pos.y, delta);
+		}
+		else
+		{
+			anim_right->Play(player_pos.x, player_pos.y, delta);
+		}
+	}
+
+private:
+	const int PLAYER_ANIM_FRAME_COUNT = 6;
+
+	const int PLAYER_SPEED = 5;
+	// 玩家宽度
+	const int PLAYER_WIDTH = 80;
+	// 玩家高度
+	const int PLAYER_HEIGHT = 80;
+	// 阴影宽度
+	const int SHADOW_WIDTH = 32;
+
+private:
+	IMAGE img_shadow;
+	Animation* anim_left;
+	Animation* anim_right;
+	// 玩家位置坐标
+	POINT player_pos = { 500, 500 };
+	bool is_move_up = false;
+	bool is_move_down = false;
+	bool is_move_left = false;
+	bool is_move_right = false;
+};
+
+#pragma comment(lib, "MSIMG32.LIB")
+
+// putimage在渲染过程中没有使用IMAGE对象的透明度信息, 绘制带有透明度的图片时, 需要使用以下函数
+inline void putimage_alpha(int x, int y, IMAGE* img)
+{
+    int w = img->getwidth();
+    int h = img->getheight();
+	AlphaBlend(GetImageHDC(NULL), x, y, w, h, GetImageHDC(img), 0, 0, w, h, {AC_SRC_OVER, 0, 255, AC_SRC_ALPHA});
+}
+int main()
+{
+	initgraph(1280, 720);
+
+	bool running = true;
+
+	Player player;
+	ExMessage msg;
+	IMAGE img_bg;
+
+	loadimage(&img_bg, _T("img/background.png"));
+
+	BeginBatchDraw();
+
+    while (running)
+    {
+		DWORD start_time = GetTickCount();
+
+		while (peekmessage(&msg))
+		{
+			player.ProcessEvent(msg);
+		}
+		player.Move();
 
 		cleardevice();
 
 		putimage(0, 0, &img_bg);
-		DrawPlayer(1000 / 60, is_move_right - is_move_left);
+		player.Draw(1000 / 60);
 
 		FlushBatchDraw();
 
