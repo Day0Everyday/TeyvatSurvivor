@@ -61,6 +61,11 @@ int idx_current_anim = 0;
 
 const int PLAYER_ANIM_FRAME_COUNT = 6;
 
+// 玩家宽度
+const int PLAYER_WIDTH = 80;
+// 玩家高度
+const int PLAYER_HEIGHT = 80;
+
 IMAGE img_player_left[PLAYER_ANIM_FRAME_COUNT];
 IMAGE img_player_right[PLAYER_ANIM_FRAME_COUNT];
 
@@ -68,6 +73,9 @@ IMAGE img_player_right[PLAYER_ANIM_FRAME_COUNT];
 POINT player_pos = { 500, 500 };
 
 const int PLAYER_SPEED = 5;
+
+Animation anim_left_player(L"img/player_left_%d.png", PLAYER_ANIM_FRAME_COUNT, 45);
+Animation anim_right_player(L"img/player_right_%d.png", PLAYER_ANIM_FRAME_COUNT, 45);
 
 #pragma comment(lib, "MSIMG32.LIB")
 
@@ -89,6 +97,28 @@ void LoadAnimation()
 		path = L"img/player_right_" + std::to_wstring(i) + L".png";
         loadimage(&img_player_right[i], path.c_str());
     }
+}
+
+void DrawPlayer(int delta, int direction_x)
+{
+	static bool facing_left = false;
+	if (direction_x < 0)
+	{
+		facing_left = true;
+	}
+	else if (direction_x > 0)
+	{
+		facing_left = false;
+	}
+
+	if (facing_left)
+	{
+		anim_left_player.Play(player_pos.x, player_pos.y, delta);
+	}
+	else
+	{
+		anim_right_player.Play(player_pos.x, player_pos.y, delta);
+	}
 }
 
 int main()
@@ -189,7 +219,7 @@ int main()
 		cleardevice();
 
 		putimage(0, 0, &img_bg);
-		putimage_alpha(player_pos.x, player_pos.y, &img_player_left[idx_current_anim]);
+		DrawPlayer(1000 / 60, is_move_right - is_move_left);
 
 		FlushBatchDraw();
 
