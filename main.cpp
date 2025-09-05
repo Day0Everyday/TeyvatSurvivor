@@ -178,6 +178,11 @@ public:
 		}
 	}
 
+	const POINT& GetPlayerPos() const
+	{
+		return player_pos;
+	}
+
 private:
 	const int PLAYER_ANIM_FRAME_COUNT = 6;
 
@@ -201,6 +206,113 @@ private:
 	bool is_move_right = false;
 };
 
+class Enemy
+{
+public:
+    Enemy()
+    {
+        loadimage(&img_shadow, _T("img/shadow_enemy.png"));
+        anim_left = new Animation(L"img/enemy_left_%d.png", ENEMY_ANIM_FRAME_COUNT, 45);
+        anim_right = new Animation(L"img/enemy_right_%d.png", ENEMY_ANIM_FRAME_COUNT, 45);
+
+		enum class SpawnEdge
+		{
+            UP = 0,
+            DOWN = 1,
+            LEFT = 2,
+            RIGHT = 3
+		};
+
+		// 将敌人放置在地图边缘的随机位置
+		SpawnEdge edge = static_cast<SpawnEdge>(rand() % 4);
+		switch (edge)
+		{
+            case SpawnEdge::UP:
+                enemy_pos.x = rand() % WINDOW_WIDTH;
+                enemy_pos.y = -ENEMY_HEIGHT;
+                break;
+            case SpawnEdge::DOWN:
+                enemy_pos.x = rand() % WINDOW_WIDTH;
+                enemy_pos.y = WINDOW_HEIGHT;
+                break;
+            case SpawnEdge::LEFT:
+                enemy_pos.x = -ENEMY_WIDTH;
+                enemy_pos.y = rand() % WINDOW_HEIGHT;
+                break;
+			case SpawnEdge::RIGHT:
+                enemy_pos.x = WINDOW_WIDTH;
+                enemy_pos.y = rand() % WINDOW_HEIGHT;
+                break;
+			default:
+                break;
+		}
+
+    }
+    ~Enemy()
+    {
+        delete anim_left;
+        delete anim_right;
+    }
+
+	bool CheckPlayerCollision(const Player& player)
+	{
+		return false;
+	}
+
+	void Move(const Player& player)
+	{ 
+		const POINT& player_pos = player.GetPlayerPos();
+		int dir_x = player_pos.x - enemy_pos.x;
+        int dir_y = player_pos.y - enemy_pos.y;
+		double input_magnitude = sqrt(dir_x * dir_x + dir_y * dir_y);
+		if (input_magnitude != 0)
+		{
+			double normalize_x = dir_x / input_magnitude;
+			double normalize_y = dir_y / input_magnitude;
+			enemy_pos.x += static_cast<int>(normalize_x * ENEMY_SPEED);
+			enemy_pos.y += static_cast<int>(normalize_y * ENEMY_SPEED);
+		}
+		if (dir_x < 0)
+		{
+			facing_left = true;
+		}
+		else if (dir_x > 0)
+		{
+			facing_left = false;
+		}
+	}
+
+	void Draw(int delta)
+	{
+		// 为敌人绘制阴影
+		int pos_shadow_x = enemy_pos.x + (ENEMY_WIDTH - SHADOW_WIDTH) / 2;
+		int pos_shadow_y = enemy_pos.y + ENEMY_HEIGHT - 35;
+		putimage_alpha(pos_shadow_x, pos_shadow_y, &img_shadow);
+		if (facing_left)
+		{
+			anim_left->Play(enemy_pos.x, enemy_pos.y, delta);
+		}
+		else
+		{
+			anim_right->Play(enemy_pos.x, enemy_pos.y, delta);
+		}
+	}
+
+private:
+	const int ENEMY_SPEED = 3;
+	const int ENEMY_WIDTH = 80;
+	const int ENEMY_HEIGHT = 80;
+	const int SHADOW_WIDTH = 48;
+	const int ENEMY_ANIM_FRAME_COUNT = 6;
+
+private:
+    IMAGE img_shadow;
+    Animation* anim_left;
+    Animation* anim_right;
+    POINT enemy_pos = { 0, 0 };
+	bool facing_left = false;
+};
+
 #pragma comment(lib, "MSIMG32.LIB")
 
 // putimage在渲染过程中没有使用IMAGE对象的透明度信息, 绘制带有透明度的图片时, 需要使用以下函数
@@ -210,6 +322,17 @@ inline void putimage_alpha(int x, int y, IMAGE* img)
     int h = img->getheight();
 	AlphaBlend(GetImageHDC(NULL), x, y, w, h, GetImageHDC(img), 0, 0, w, h, {AC_SRC_OVER, 0, 255, AC_SRC_ALPHA});
 }
+
+void TryGenerateNewEnemy(std::vector<Enemy*>& enemies)
+{
+	const int ENEMY_SPAWN_INTERVAL = 100;
+	static int counter = 0;
+	if ((++counter) % ENEMY_SPAWN_INTERVAL == 0)
+	{
+		enemies.push_back(new Enemy());
+	}
+}
+
 int main()
 {
 	initgraph(1280, 720);
@@ -219,6 +342,7 @@ int main()
 	Player player;
 	ExMessage msg;
 	IMAGE img_bg;
+	std::vector<Enemy*> enemies;
 
 	loadimage(&img_bg, _T("img/background.png"));
 
@@ -234,10 +358,20 @@ int main()
 		}
 		player.Move();
 
+		TryGenerateNewEnemy(enemies);
+		for (auto enemy : enemies)
+        {
+			enemy->Move(player);
+        }
+
 		cleardevice();
 
 		putimage(0, 0, &img_bg);
 		player.Draw(1000 / 60);
+        for (auto enemy : enemies)
+        {
+			enemy->Draw(1000 / 60);
+        }
 
 		FlushBatchDraw();
 
