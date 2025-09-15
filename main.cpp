@@ -372,6 +372,32 @@ void TryGenerateNewEnemy(std::vector<Enemy*>& enemies)
 	}
 }
 
+void UpdateBullets(std::vector<Bullet>& bullets, const Player& player)
+{
+	// 径向波动速度
+	const double RADIAL_SPEED = 0.0045;
+
+	// 切向波动速度
+	const double TANGENTIAL_SPEED = 0.0055;
+
+	// 子弹之间的弧度间隔
+	double bullet_arc_interval = 2 * 3.14159 / bullets.size();
+
+	POINT player_pos = player.GetPlayerPos();
+
+	double radius = 100 + 25 * sin(GetTickCount() * RADIAL_SPEED);
+
+    for (size_t i = 0; i < bullets.size(); i++)
+    {
+		// 计算子弹所在的弧度
+		double radian = GetTickCount() * TANGENTIAL_SPEED + i * bullet_arc_interval;
+
+		// 加上玩家二分之一宽高修正是为了使玩家成为子弹旋转的中学
+        bullets[i].bullet_pos.x = player_pos.x + player.GetWidth() / 2 + static_cast<long>(radius * cos(radian));
+		bullets[i].bullet_pos.y = player_pos.y + player.GetHeight() / 2 + static_cast<long>(radius * sin(radian));
+    }
+}
+
 int main()
 {
 	initgraph(1280, 720);
@@ -382,6 +408,7 @@ int main()
 	ExMessage msg;
 	IMAGE img_bg;
 	std::vector<Enemy*> enemies;
+	std::vector<Bullet> bullets(3);
 
 	loadimage(&img_bg, _T("img/background.png"));
 
@@ -396,7 +423,7 @@ int main()
 			player.ProcessEvent(msg);
 		}
 		player.Move();
-
+		UpdateBullets(bullets, player);
 		TryGenerateNewEnemy(enemies);
 		for (auto enemy : enemies)
         {
@@ -420,6 +447,11 @@ int main()
         for (auto enemy : enemies)
         {
 			enemy->Draw(1000 / 60);
+        }
+
+		for (Bullet& bullet : bullets)
+        {
+			bullet.Draw();
         }
 
 		FlushBatchDraw();
