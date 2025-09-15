@@ -183,6 +183,16 @@ public:
 		return player_pos;
 	}
 
+	const int GetWidth() const
+	{
+		return PLAYER_WIDTH;
+	}
+
+    const int GetHeight() const
+    {
+        return PLAYER_HEIGHT;
+    }
+
 private:
 	const int PLAYER_ANIM_FRAME_COUNT = 6;
 
@@ -204,6 +214,26 @@ private:
 	bool is_move_down = false;
 	bool is_move_left = false;
 	bool is_move_right = false;
+};
+
+class Bullet
+{
+public:
+	POINT bullet_pos = {0, 0};
+
+public:
+    Bullet() = default;
+    ~Bullet() = default;
+
+	void Draw()
+    {
+        setlinecolor(RGB(255, 155, 50));
+		setfillcolor(RGB(200, 75, 10));
+		fillcircle(bullet_pos.x, bullet_pos.y, RADIUS);
+    }
+
+private:
+	const int RADIUS = 10;
 };
 
 class Enemy
@@ -256,7 +286,16 @@ public:
 
 	bool CheckPlayerCollision(const Player& player)
 	{
-		return false;
+        bool is_collision_x = (player.GetPlayerPos().x + player.GetWidth() > enemy_pos.x) && (player.GetPlayerPos().x < enemy_pos.x + ENEMY_WIDTH);
+		bool is_collision_y = (player.GetPlayerPos().y + player.GetHeight() > enemy_pos.y) && (player.GetPlayerPos().y < enemy_pos.y + ENEMY_HEIGHT);
+        return is_collision_x && is_collision_y;
+	}
+
+	bool CheckBulletCollision(const Bullet& bullet)
+	{
+		bool is_collision_x = (bullet.bullet_pos.x + 10 > enemy_pos.x) && (bullet.bullet_pos.x - 10 < enemy_pos.x + ENEMY_WIDTH);
+        bool is_collision_y = (bullet.bullet_pos.y + 10 > enemy_pos.y) && (bullet.bullet_pos.y - 10 < enemy_pos.y + ENEMY_HEIGHT);
+		return is_collision_x && is_collision_y;
 	}
 
 	void Move(const Player& player)
@@ -362,6 +401,16 @@ int main()
 		for (auto enemy : enemies)
         {
 			enemy->Move(player);
+        }
+
+		for (auto enemy : enemies)
+        {
+			if (enemy->CheckPlayerCollision(player))
+            {
+                MessageBox(GetHWnd(), _T("Game Over!"), _T("Game Over!"), MB_OK);
+				running = false;
+                break;
+            }
         }
 
 		cleardevice();
